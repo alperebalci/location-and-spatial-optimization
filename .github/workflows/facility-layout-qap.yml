@@ -1,0 +1,38 @@
+name: facility-layout-qap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "projects/facility-layout-quadratic-assignment/**"
+      - ".github/workflows/facility-layout-qap.yml"
+      - "README.md"
+      - "RESEARCH_SERIES.md"
+  pull_request:
+    paths:
+      - "projects/facility-layout-quadratic-assignment/**"
+      - ".github/workflows/facility-layout-qap.yml"
+      - "README.md"
+      - "RESEARCH_SERIES.md"
+
+permissions:
+  contents: read
+
+jobs:
+  qap:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    defaults:
+      run:
+        working-directory: projects/facility-layout-quadratic-assignment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Run exact and heuristic benchmark
+        run: python facility_layout_qap.py --restarts 12 --seed 42
