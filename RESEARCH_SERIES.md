@@ -15,6 +15,11 @@ These two fire-station repositories should remain separate because one is primar
 - `multi-site-resource-allocation-optimization` — allocation across multiple sites.
 - `scarce-water-resource-allocation-optimization` — resource allocation under scarcity rather than physical facility-opening decisions.
 
+## Internal facility layout
+
+- `facility-layout-quadratic-assignment` — equal-area department-to-bay assignment using the classical QAP objective `flow × distance`, with exact small-instance enumeration and multi-start 2-exchange search.
+
+Facility layout is kept distinct from facility location. The former assumes the plant/site exists and optimizes internal departmental placement; the latter chooses which external sites or facilities to open.
 ## Districting and service-area design
 
 - `school-districting-optimization-gurobi` — educational cohort-to-school assignment MILP.
@@ -29,4 +34,4 @@ These two fire-station repositories should remain separate because one is primar
 
 ## Portfolio rule
 
-Repositories should remain separate when the mathematical core changes between covering, p-median/location-allocation, capacitated facility location, districting, network design, or resource allocation. Geographic similarity is not sufficient evidence for consolidation.
+Repositories should remain separate when the mathematical core changes between covering, p-median/location-allocation, capacitated facility location, internal facility layout/QAP, districting, network design, or resource allocation. Geographic similarity is not sufficient evidence for consolidation.
