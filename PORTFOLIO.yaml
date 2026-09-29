@@ -1,0 +1,20 @@
+schema_version: 1
+repository: location-and-spatial-optimization
+role: umbrella
+axis: problem-class
+area: location-spatial
+status: active
+owner: jorsacademy
+projects:
+  - capacitated-facility-location-tabu-search-julia
+  - fire-station-location-optimization-pulp
+  - facility-layout-quadratic-assignment
+  - school-districting-optimization-gurobi
+  - school-redistricting-optimization-gurobi
+  - urban-parking-recommendation-milp
+  - wind-farm-layout-optimization
+  - wind-farm-layout-optimizer
+conventions:
+  provenance_records: true
+  reproducibility_expected: true
+  benchmark_assumptions_documented: true
