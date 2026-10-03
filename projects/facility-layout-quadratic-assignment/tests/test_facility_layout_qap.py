@@ -12,6 +12,7 @@ from facility_layout_qap import (
     manhattan_distance_matrix,
     multistart_local_search,
     qap_objective,
+    simulated_annealing,
 )
 
 
@@ -59,6 +60,38 @@ class FacilityLayoutQAPTests(unittest.TestCase):
         greedy_cost = qap_objective(instance, greedy_assignment)
         result = multistart_local_search(instance, restarts=8, seed=9)
         self.assertLessEqual(result.objective, greedy_cost + 1e-9)
+
+    def test_simulated_annealing_is_reproducible_and_never_worsens_start(self):
+        instance = default_facility_layout_instance()
+        start = greedy_flow_centrality_assignment(instance)
+        start_cost = qap_objective(instance, start)
+
+        first = simulated_annealing(
+            instance,
+            start=start,
+            iterations=1000,
+            seed=42,
+        )
+        second = simulated_annealing(
+            instance,
+            start=start,
+            iterations=1000,
+            seed=42,
+        )
+
+        self.assertEqual(first.assignment, second.assignment)
+        self.assertAlmostEqual(first.objective, second.objective)
+        self.assertLessEqual(first.objective, start_cost + 1e-9)
+        self.assertTrue(audit_solution(instance, first)["objective_matches"])
+
+    def test_simulated_annealing_validates_parameters(self):
+        instance = default_facility_layout_instance()
+        with self.assertRaises(ValueError):
+            simulated_annealing(instance, iterations=0)
+        with self.assertRaises(ValueError):
+            simulated_annealing(instance, cooling_rate=1.0)
+        with self.assertRaises(ValueError):
+            simulated_annealing(instance, initial_temperature=0.0)
 
     def test_invalid_duplicate_location_assignment_is_rejected(self):
         instance = default_facility_layout_instance()
