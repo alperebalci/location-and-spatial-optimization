@@ -193,6 +193,67 @@ def multistart_local_search(
     )
 
 
+def simulated_annealing(
+    instance: QAPInstance,
+    *,
+    start: Sequence[int] | None = None,
+    iterations: int = 5000,
+    seed: int = 42,
+    initial_temperature: float | None = None,
+    cooling_rate: float = 0.995,
+) -> LayoutSolution:
+    """Solve the QAP approximately with 2-swap simulated annealing."""
+    instance.validate()
+    if iterations <= 0:
+        raise ValueError("iterations must be positive")
+    if not 0.0 < cooling_rate < 1.0:
+        raise ValueError("cooling_rate must be between 0 and 1")
+
+    if start is None:
+        current = list(greedy_flow_centrality_assignment(instance))
+    else:
+        current = list(_validate_assignment(instance, start))
+
+    current_cost = qap_objective(instance, current)
+    best = current.copy()
+    best_cost = current_cost
+
+    if initial_temperature is None:
+        temperature = max(1.0, 0.25 * current_cost)
+    else:
+        temperature = float(initial_temperature)
+        if temperature <= 0.0:
+            raise ValueError("initial_temperature must be positive")
+
+    rng = random.Random(seed)
+    n = len(current)
+    evaluated = 1
+
+    for _ in range(iterations):
+        i, j = rng.sample(range(n), 2)
+        candidate = current.copy()
+        candidate[i], candidate[j] = candidate[j], candidate[i]
+        candidate_cost = qap_objective(instance, candidate)
+        evaluated += 1
+
+        delta = candidate_cost - current_cost
+        if delta <= 0.0 or rng.random() < math.exp(-delta / temperature):
+            current = candidate
+            current_cost = candidate_cost
+            if current_cost < best_cost - 1e-12:
+                best = current.copy()
+                best_cost = current_cost
+
+        temperature = max(temperature * cooling_rate, 1e-12)
+
+    return LayoutSolution(
+        assignment=tuple(best),
+        objective=float(best_cost),
+        method=f"simulated_annealing_{iterations}",
+        evaluated_assignments=evaluated,
+    )
+
+
 def exact_enumeration(
     instance: QAPInstance,
     *,
@@ -314,7 +375,12 @@ def grid_layout(instance: QAPInstance, solution: LayoutSolution) -> list[list[st
     return grid
 
 
-def benchmark_demo(*, restarts: int = 50, seed: int = 42) -> dict[str, object]:
+def benchmark_demo(
+    *,
+    restarts: int = 50,
+    seed: int = 42,
+    sa_iterations: int = 5000,
+) -> dict[str, object]:
     instance = default_facility_layout_instance()
 
     greedy_assignment = greedy_flow_centrality_assignment(instance)
@@ -329,9 +395,15 @@ def benchmark_demo(*, restarts: int = 50, seed: int = 42) -> dict[str, object]:
         restarts=restarts,
         seed=seed,
     )
+    annealing = simulated_annealing(
+        instance,
+        start=greedy_assignment,
+        iterations=sa_iterations,
+        seed=seed,
+    )
     exact = exact_enumeration(instance)
 
-    for solution in (greedy, heuristic, exact):
+    for solution in (greedy, heuristic, annealing, exact):
         audit = audit_solution(instance, solution)
         if not audit["objective_matches"]:
             raise RuntimeError(f"objective audit failed for {solution.method}")
@@ -358,6 +430,12 @@ def benchmark_demo(*, restarts: int = 50, seed: int = 42) -> dict[str, object]:
                 "evaluated_assignments": heuristic.evaluated_assignments,
             },
             {
+                "method": annealing.method,
+                "objective": annealing.objective,
+                "gap_to_exact_pct": 100.0 * (annealing.objective / exact.objective - 1.0),
+                "evaluated_assignments": annealing.evaluated_assignments,
+            },
+            {
                 "method": exact.method,
                 "objective": exact.objective,
                 "gap_to_exact_pct": 0.0,
@@ -373,8 +451,18 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--restarts", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--sa-iterations", type=int, default=5000)
     args = parser.parse_args()
-    print(json.dumps(benchmark_demo(restarts=args.restarts, seed=args.seed), indent=2))
+    print(
+        json.dumps(
+            benchmark_demo(
+                restarts=args.restarts,
+                seed=args.seed,
+                sa_iterations=args.sa_iterations,
+            ),
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
