@@ -73,6 +73,18 @@ The local search is started from:
 
 The best local optimum is retained.
 
+### Simulated annealing
+
+A stochastic 2-swap search starts from the greedy layout and sometimes accepts
+worse intermediate assignments according to a cooling schedule. This provides
+an explicit escape mechanism from 2-exchange local optima while retaining the
+best layout visited during the run.
+
+The implementation is reproducible under a fixed seed and validates the
+iteration budget, initial temperature, and cooling rate. It remains a heuristic:
+solution quality is measured against the exact enumerator on the small fixture,
+not assumed from the metaheuristic itself.
+
 ### Exact enumeration
 
 For small layouts, every department-to-location permutation is enumerated. The
@@ -104,7 +116,7 @@ From this project directory:
 
 ```bash
 python facility_layout_qap.py
-python facility_layout_qap.py --restarts 100 --seed 42
+python facility_layout_qap.py --restarts 100 --sa-iterations 10000 --seed 42
 ```
 
 Tests:
@@ -134,4 +146,4 @@ Natural future extensions are:
 - stochastic material flows;
 - multi-floor layouts;
 - QAPLIB benchmark ingestion;
-- tabu search, simulated annealing, and robust metaheuristic comparison.
+- tabu search and robust multi-metaheuristic comparison.
